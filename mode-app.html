@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M.ODE — AI Personal Stylist</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Outfit:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f7f4ee;--surface:#ffffff;--surface2:#f0ede6;--border:#e2ddd4;--black:#111110;--gold:#a8895a;--gold-light:#c8a96e;--gold-bg:#f9f4ec;--text:#111110;--muted:#9a9488;--muted2:#6b6560}
+body{font-family:'Outfit',sans-serif;font-weight:300;background:var(--bg);color:var(--text);min-height:100vh}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.header{background:var(--bg);padding:0 2.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.logo{font-family:'Cormorant Garamond',serif;font-size:1.25rem;font-weight:300;letter-spacing:0.35em;text-transform:uppercase;color:var(--black)}
+.logo em{color:var(--gold);font-style:normal}
+.header-right{font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:6px}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);animation:breathe 2.5s ease infinite}
+@keyframes breathe{0%,100%{opacity:0.4}50%{opacity:1}}
+.main{flex:1;display:grid;grid-template-columns:360px 1fr;min-height:calc(100vh - 60px)}
+.left{border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--surface)}
+.upload-zone{margin:1.8rem 1.8rem 0;border:1px solid var(--border);border-radius:8px;background:var(--surface2);cursor:pointer;transition:all 0.35s;position:relative;overflow:hidden;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.upload-zone:hover{border-color:var(--gold-light);background:var(--gold-bg)}
+.upload-zone.filled{border-color:var(--gold)}
+.upload-inner{text-align:center;padding:1.5rem;display:flex;flex-direction:column;align-items:center;gap:0.8rem}
+.upload-icon-wrap{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;background:var(--surface)}
+.upload-icon-wrap svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:1.5}
+.upload-title{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:400;font-style:italic;color:var(--muted2)}
+.upload-hint{font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);opacity:0.7}
+.upload-preview{position:absolute;inset:0;display:none}
+.upload-preview img{width:100%;height:100%;object-fit:cover}
+.upload-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(17,17,16,0.55) 0%,transparent 55%);display:flex;align-items:flex-end;padding:1rem 1.2rem}
+.change-btn{font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:#f7f4ee;border:1px solid rgba(247,244,238,0.4);padding:5px 14px;border-radius:3px;background:rgba(17,17,16,0.4)}
+#fileInput{display:none}
+.form-area{padding:1.4rem 1.8rem 1.8rem;display:flex;flex-direction:column;gap:1rem;flex:1;overflow-y:auto}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:5px}
+.lbl{font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted)}
+.inp,.sel{padding:0.58rem 0.8rem;border:1px solid var(--border);border-radius:5px;font-family:'Outfit',sans-serif;font-weight:300;font-size:0.78rem;background:var(--bg);color:var(--text);outline:none;transition:border-color 0.25s;-webkit-appearance:none}
+.inp:focus,.sel:focus{border-color:var(--gold-light)}
+.inp::placeholder{color:var(--muted)}
+.scene-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.sc{background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:7px 2px;font-family:'Outfit',sans-serif;font-weight:300;font-size:0.66rem;letter-spacing:0.06em;color:var(--muted);cursor:pointer;transition:all 0.25s;text-align:center}
+.sc.on{background:var(--gold-bg);border-color:var(--gold-light);color:var(--gold)}
+.api-box{background:var(--gold-bg);border:1px solid rgba(168,137,90,0.2);border-radius:6px;padding:0.9rem 1rem;display:flex;flex-direction:column;gap:6px}
+.api-inp{padding:0.55rem 0.8rem;border:1px solid rgba(168,137,90,0.3);border-radius:4px;font-family:'Outfit',sans-serif;font-weight:300;font-size:0.75rem;background:white;color:var(--text);outline:none;width:100%}
+.api-inp::placeholder{color:var(--muted)}
+.api-note{font-size:0.58rem;color:var(--muted);line-height:1.6}
+.cta{padding:0.82rem 1rem;background:var(--black);border:none;border-radius:5px;font-family:'Outfit',sans-serif;font-weight:400;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--bg);cursor:pointer;transition:all 0.3s;width:100%}
+.cta:hover{background:var(--gold)}
+.cta:disabled{opacity:0.35;cursor:not-allowed;background:var(--black)}
+.err{background:#fff5f5;border:1px solid #fcd0d0;border-radius:5px;padding:0.8rem 1rem;font-size:0.75rem;color:#c0392b;display:none;line-height:1.6}
+.right{background:var(--bg);display:flex;flex-direction:column}
+.right-scroll{flex:1;overflow-y:auto;padding:3rem 3.5rem}
+.empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.8rem;text-align:center}
+.empty-mark{font-family:'Cormorant Garamond',serif;font-size:5rem;font-weight:300;font-style:italic;color:rgba(168,137,90,0.1);letter-spacing:0.05em;line-height:1}
+.empty-rule{width:32px;height:1px;background:var(--border);margin:0 auto}
+.empty-caption{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted)}
+.loading{display:none;height:100%;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem}
+.loader{width:100px;height:1px;background:var(--border);position:relative;overflow:hidden}
+.loader::after{content:'';position:absolute;inset:0;background:var(--gold);animation:load 1.4s cubic-bezier(0.4,0,0.6,1) infinite}
+@keyframes load{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+.load-text{font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted)}
+.result{display:none;animation:appear 0.55s cubic-bezier(0.16,1,0.3,1)}
+@keyframes appear{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.r-eyebrow{font-size:0.58rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--gold);margin-bottom:0.9rem}
+.r-headline{font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:300;font-style:italic;line-height:1.2;margin-bottom:2rem;color:var(--black)}
+.r-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:2rem}
+.pill{font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;padding:4px 12px;border:1px solid rgba(168,137,90,0.25);border-radius:2px;color:var(--gold);background:var(--gold-bg)}
+.r-rule{height:1px;background:var(--border);margin-bottom:2rem}
+.r-label{font-size:0.58rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);margin-bottom:1.2rem}
+.r-body{font-size:0.88rem;line-height:2;color:var(--muted2);white-space:pre-wrap;font-weight:300}
+.r-foot{margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.56rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="logo">M<em>.</em>ODE</div>
+    <div class="header-right"><div class="live-dot"></div>AI パーソナルスタイリスト</div>
+  </header>
+  <div class="main">
+    <div class="left">
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-inner" id="uploadInner">
+          <div class="upload-icon-wrap"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+          <div class="upload-title">全身写真をアップロード</div>
+          <div class="upload-hint">体型・肌色を AI が分析します</div>
+        </div>
+        <div class="upload-preview" id="uploadPreview">
+          <img id="previewImg" src="" alt="">
+          <div class="upload-overlay"><span class="change-btn">写真を変更する</span></div>
+        </div>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
+      <div class="form-area">
+        <div class="row2">
+          <div class="field"><div class="lbl">予算</div><select class="sel" id="budget"><option>〜¥10,000</option><option>〜¥30,000</option><option selected>〜¥50,000</option><option>〜¥100,000</option><option>制限なし</option></select></div>
+          <div class="field"><div class="lbl">性別</div><select class="sel" id="gender"><option>女性</option><option>男性</option><option>問わない</option></select></div>
+        </div>
+        <div class="row2">
+          <div class="field"><div class="lbl">年齢層</div><select class="sel" id="age"><option>10代</option><option>20代前半</option><option selected>20代後半</option><option>30代</option><option>40代以上</option></select></div>
+          <div class="field"><div class="lbl">リクエスト</div><input class="inp" id="request" placeholder="清潔感、大人っぽく…"></div>
+        </div>
+        <div class="field">
+          <div class="lbl">シーン</div>
+          <div class="scene-grid">
+            <button class="sc on" onclick="pickScene(this)">デート</button>
+            <button class="sc" onclick="pickScene(this)">オフィス</button>
+            <button class="sc" onclick="pickScene(this)">合コン</button>
+            <button class="sc" onclick="pickScene(this)">週末</button>
+            <button class="sc" onclick="pickScene(this)">パーティー</button>
+            <button class="sc" onclick="pickScene(this)">旅行</button>
+          </div>
+        </div>
+        <div class="api-box">
+          <div class="lbl">Anthropic API キー</div>
+          <input class="api-inp" id="apiKey" type="password" placeholder="sk-ant-... を入力してください">
+          <div class="api-note">console.anthropic.com で発行したキーをここに貼ってください。チャットには絶対貼らないでください。</div>
+        </div>
+        <button class="cta" id="analyzeBtn" onclick="analyze()">スタイリングを依頼する</button>
+        <div class="err" id="errMsg"></div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="right-scroll">
+        <div class="empty" id="emptyState">
+          <div class="empty-mark">Mode</div>
+          <div class="empty-rule"></div>
+          <div class="empty-caption">APIキーを入力してスタイリングを依頼する</div>
+        </div>
+        <div class="loading" id="loading">
+          <div class="loader"></div>
+          <div class="load-text">あなたに合うスタイルを分析中</div>
+        </div>
+        <div class="result" id="result">
+          <div class="r-eyebrow">AI スタイリング提案</div>
+          <div class="r-headline" id="rHeadline">—</div>
+          <div class="r-pills" id="rPills"></div>
+          <div class="r-rule"></div>
+          <div class="r-label">スタイリストより</div>
+          <div class="r-body" id="rBody"></div>
+          <div class="r-foot"><span>M.ODE — AI Personal Stylist</span><span id="rFoot">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+let imageBase64=null,scene='デート'
+function handleFile(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{imageBase64=ev.target.result.split(',')[1];document.getElementById('previewImg').src=ev.target.result;document.getElementById('uploadPreview').style.display='block';document.getElementById('uploadInner').style.display='none';document.getElementById('uploadZone').classList.add('filled')};r.readAsDataURL(f)}
+function pickScene(el){document.querySelectorAll('.sc').forEach(b=>b.classList.remove('on'));el.classList.add('on');scene=el.textContent}
+function showErr(msg){const el=document.getElementById('errMsg');el.textContent=msg;el.style.display='block'}
+function hideErr(){document.getElementById('errMsg').style.display='none'}
+async function analyze(){
+  const apiKey=document.getElementById('apiKey').value.trim()
+  if(!apiKey){showErr('APIキーを入力してください');return}
+  if(!apiKey.startsWith('sk-ant-')){showErr('正しいAPIキーを入力してください（sk-ant- で始まります）');return}
+  hideErr()
+  const budget=document.getElementById('budget').value,age=document.getElementById('age').value,gender=document.getElementById('gender').value,req=document.getElementById('request').value
+  document.getElementById('emptyState').style.display='none';document.getElementById('result').style.display='none';document.getElementById('loading').style.display='flex';document.getElementById('analyzeBtn').disabled=true
+  const system=`あなたは世界トップクラスのパーソナルスタイリストです。忖度なし。ユニクロが最適ならユニクロを推す。ブランドに忖度せず、その人の結果だけを考える。ファッションに興味がない人にも分かりやすく、プロとして具体的に提案する。写真がある場合：骨格タイプ・パーソナルカラー・顔の印象・現在の着こなしの問題点を分析する。回答構成：1.分析（骨格・カラー・印象を一言ずつ）2.このシーン・予算・条件でのコーディネート全体像 3.具体的アイテム3〜4点（ブランド名・価格帯・理由）4.正直な一言アドバイス。日本語のみ。読みやすく改行を使う。記号・マークダウン不使用。`
+  const content=[]
+  if(imageBase64){content.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:imageBase64}});content.push({type:'text',text:`シーン：${scene}/予算：${budget}/年齢：${age}/性別：${gender}/リクエスト：${req||'なし'}\n\n写真の人物を分析して、上記条件でスタイリング提案をしてください。`})}
+  else{content.push({type:'text',text:`写真なし。シーン：${scene}/予算：${budget}/年齢：${age}/性別：${gender}/リクエスト：${req||'なし'}\n\nこの条件に最適なスタイリングを提案してください。`})}
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-use':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system,messages:[{role:'user',content}]})})
+    const data=await res.json()
+    if(data.error){showErr('APIエラー: '+data.error.message);document.getElementById('loading').style.display='none';document.getElementById('emptyState').style.display='flex';document.getElementById('analyzeBtn').disabled=false;return}
+    const text=data.content?.map(c=>c.text||'').join('')||'エラー'
+    const bodyType=text.match(/(ストレート|ウェーブ|ナチュラル)/)?.[1]||'骨格分析済'
+    const colorType=text.match(/(スプリング|サマー|オータム|ウィンター)/)?.[1]||'カラー分析済'
+    const faceType=text.match(/(フレッシュ|クール|フェミニン|ジェンダーレス|エレガント)/)?.[1]||'印象分析済'
+    document.getElementById('rPills').innerHTML=[bodyType,colorType,faceType,scene,budget].map(p=>`<div class="pill">${p}</div>`).join('')
+    document.getElementById('rHeadline').textContent=scene+'のための\nスタイリング'
+    document.getElementById('rBody').textContent=text
+    document.getElementById('rFoot').textContent=scene+' — '+budget
+    document.getElementById('loading').style.display='none'
+    document.getElementById('result').style.display='block'
+  }catch(e){showErr('接続エラー。もう一度お試しください。');document.getElementById('loading').style.display='none';document.getElementById('emptyState').style.display='flex'}
+  document.getElementById('analyzeBtn').disabled=false
+}
+</script>
+</body>
+</html>
